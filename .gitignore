@@ -1,0 +1,22 @@
+Byte-compiled / optimized / DLL files
+
+pycache/
+*.py[cod]
+*$py.class
+
+Caches
+
+.streamlit/
+.sass-cache/
+.pytest_cache/
+
+Virtual Env
+
+venv/
+env/
+ENV/
+.venv/
+
+Mac OS
+
+.DS_Store
