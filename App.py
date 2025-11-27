@@ -143,7 +143,19 @@ if uploaded_files:
             
             # --- Panel de Configuración por Archivo (Expanders) ---
             with st.expander(f"🖍️ {file.name}", expanded=(i==0)):
-                c1, c2, c3 = st.columns(3)
+                # Se añaden 4 columnas para incluir el campo de Orden
+                c0, c1, c2, c3 = st.columns([1, 2, 2, 2])
+                
+                # NUEVO: Campo de Orden
+                order = c0.number_input(
+                    "Orden", 
+                    min_value=1, 
+                    value=i + 1, 
+                    step=1, 
+                    key=f"ord_{i}",
+                    help="Define el orden de graficado y leyenda (1 es el primero en la parte superior del apilado)."
+                )
+
                 default_name = file.name.rsplit('.', 1)[0]
                 label = c1.text_input(f"Etiqueta", value=default_name, key=f"lbl_{i}")
                 
@@ -158,7 +170,8 @@ if uploaded_files:
                 "label": label,
                 "color": color,
                 "linestyle": linestyle,
-                "filename": file.name
+                "filename": file.name,
+                "order": order # Guardar el orden definido por el usuario
             })
         else:
             st.error(f"⚠️ Error leyendo {file.name}. Verifica que sea un CSV válido y ajusta las 'Filas a saltar' en el menú lateral.")
@@ -166,6 +179,9 @@ if uploaded_files:
     # --- Generación del Gráfico ---
     if plot_data:
         st.write("---")
+
+        # NUEVO: Ordenar la lista de datos según el campo 'order'
+        plot_data.sort(key=lambda x: x['order'])
         
         # Crear figura Matplotlib
         # Ajustamos figsize para que sea panorámico
@@ -179,7 +195,7 @@ if uploaded_files:
             x_plot = item['df']['x'].values
             
             # Aplicar Offset para modo apilado
-            # Si es apilado, sumamos (idx * offset). Si no, es 0.
+            # NOTA: idx ahora representa la posición en el *orden deseado*
             current_offset = idx * offset_value if stack_mode else 0
             y_final = y_plot + current_offset
             
@@ -269,6 +285,6 @@ else:
     ### Instrucciones:
     1. **Sube** tus archivos CSV generados por el equipo FTIR.
     2. Ajusta el parámetro **"Filas a saltar"** si tus archivos tienen texto al principio.
-    3. Usa las opciones de **Personalización** para cambiar colores y nombres.
+    3. Usa las opciones de **Personalización** para cambiar colores, nombres y **el orden de graficado**.
     4. Descarga la imagen final o la tabla de bandas.
     """)
