@@ -98,6 +98,9 @@ with st.sidebar:
     col_r1, col_r2 = st.columns(2)
     x_max_limit = col_r1.number_input("Máx (cm⁻¹)", value=4000)
     x_min_limit = col_r2.number_input("Mín (cm⁻¹)", value=400)
+    invalid_range = x_max_limit <= x_min_limit
+    if invalid_range:
+        st.error("El valor máximo debe ser mayor que el mínimo para graficar el espectro.")
     
     st.divider()
     
@@ -131,6 +134,9 @@ if uploaded_files:
         
         if df is not None and not df.empty:
             # Filtrar por rango seleccionado para optimizar
+            if invalid_range:
+                st.warning("Ajusta el rango del eje X antes de procesar los archivos.")
+                break
             mask = (df['x'] <= x_max_limit) & (df['x'] >= x_min_limit)
             df_filtered = df[mask].copy()
             
@@ -213,11 +219,12 @@ if uploaded_files:
             prom = 0.02 if normalize_option else 0.5
             peaks_x, peaks_y = find_ftir_peaks(item['df']['x'], item['df']['y'], prominence=prom)
             
+            transmittance_label = "Transmitancia Normalizada" if normalize_option else "Transmitancia Original"
             for px, py in zip(peaks_x, peaks_y):
                 all_peaks_data.append({
                     "Serie": item['label'],
                     "Número de Onda (cm⁻¹)": round(px, 2),
-                    "Transmitancia Original": round(py, 4),
+                    transmittance_label: round(py, 4),
                     "Archivo Origen": item['filename']
                 })
 
