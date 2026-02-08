@@ -22,6 +22,26 @@ st.markdown("""
 
 # --- Funciones Auxiliares ---
 
+def read_csv_flexible(uploaded_file, skip_rows):
+    read_attempts = [
+        {"sep": None, "engine": "python"},
+        {"sep": ";", "engine": "python", "decimal": ","},
+        {"sep": ";", "engine": "python"},
+        {"sep": "\t", "engine": "python"},
+    ]
+
+    for params in read_attempts:
+        try:
+            uploaded_file.seek(0)
+            df = pd.read_csv(uploaded_file, skiprows=skip_rows, encoding="latin1", **params)
+            df = df.dropna(axis=1, how="all")
+            if df.shape[1] >= 2:
+                return df
+        except Exception:
+            continue
+    return None
+
+
 def load_ftir_data(uploaded_file, skip_rows):
     """
     Carga el archivo CSV saltando filas de metadatos.
@@ -30,7 +50,9 @@ def load_ftir_data(uploaded_file, skip_rows):
     try:
         # Leemos el archivo
         # encoding='latin1' es común en equipos científicos antiguos/windows
-        df = pd.read_csv(uploaded_file, skiprows=skip_rows, encoding='latin1')
+        df = read_csv_flexible(uploaded_file, skip_rows)
+        if df is None:
+            return None
         
         # Limpieza básica de nombres de columnas
         df.columns = [str(c).lower().strip() for c in df.columns]
@@ -98,6 +120,9 @@ with st.sidebar:
     col_r1, col_r2 = st.columns(2)
     x_max_limit = col_r1.number_input("Máx (cm⁻¹)", value=4000)
     x_min_limit = col_r2.number_input("Mín (cm⁻¹)", value=400)
+    invalid_range = x_max_limit <= x_min_limit
+    if invalid_range:
+        st.error("El valor máximo debe ser mayor que el mínimo para graficar el espectro.")
     
     st.divider()
     
@@ -131,6 +156,9 @@ if uploaded_files:
         
         if df is not None and not df.empty:
             # Filtrar por rango seleccionado para optimizar
+            if invalid_range:
+                st.warning("Ajusta el rango del eje X antes de procesar los archivos.")
+                break
             mask = (df['x'] <= x_max_limit) & (df['x'] >= x_min_limit)
             df_filtered = df[mask].copy()
             
@@ -213,11 +241,12 @@ if uploaded_files:
             prom = 0.02 if normalize_option else 0.5
             peaks_x, peaks_y = find_ftir_peaks(item['df']['x'], item['df']['y'], prominence=prom)
             
+            transmittance_label = "Transmitancia Normalizada" if normalize_option else "Transmitancia Original"
             for px, py in zip(peaks_x, peaks_y):
                 all_peaks_data.append({
                     "Serie": item['label'],
                     "Número de Onda (cm⁻¹)": round(px, 2),
-                    "Transmitancia Original": round(py, 4),
+                    transmittance_label: round(py, 4),
                     "Archivo Origen": item['filename']
                 })
 
