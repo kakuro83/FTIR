@@ -22,6 +22,26 @@ st.markdown("""
 
 # --- Funciones Auxiliares ---
 
+def read_csv_flexible(uploaded_file, skip_rows):
+    read_attempts = [
+        {"sep": None, "engine": "python"},
+        {"sep": ";", "engine": "python", "decimal": ","},
+        {"sep": ";", "engine": "python"},
+        {"sep": "\t", "engine": "python"},
+    ]
+
+    for params in read_attempts:
+        try:
+            uploaded_file.seek(0)
+            df = pd.read_csv(uploaded_file, skiprows=skip_rows, encoding="latin1", **params)
+            df = df.dropna(axis=1, how="all")
+            if df.shape[1] >= 2:
+                return df
+        except Exception:
+            continue
+    return None
+
+
 def load_ftir_data(uploaded_file, skip_rows):
     """
     Carga el archivo CSV saltando filas de metadatos.
@@ -30,7 +50,9 @@ def load_ftir_data(uploaded_file, skip_rows):
     try:
         # Leemos el archivo
         # encoding='latin1' es común en equipos científicos antiguos/windows
-        df = pd.read_csv(uploaded_file, skiprows=skip_rows, encoding='latin1')
+        df = read_csv_flexible(uploaded_file, skip_rows)
+        if df is None:
+            return None
         
         # Limpieza básica de nombres de columnas
         df.columns = [str(c).lower().strip() for c in df.columns]
