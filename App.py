@@ -22,35 +22,12 @@ st.markdown("""
 
 # --- Funciones Auxiliares ---
 
-def detect_csv_format(uploaded_file):
-    uploaded_file.seek(0)
-    sample = uploaded_file.read(4096)
-    if isinstance(sample, bytes):
-        sample = sample.decode("latin1", errors="ignore")
-    uploaded_file.seek(0)
-
-    lines = [line for line in sample.splitlines() if line.strip()]
-    header_line = lines[0] if lines else ""
-
-    if ";" in header_line:
-        return ";", ","
-    if "\t" in header_line:
-        return "\t", "."
-    if "," in header_line:
-        return ",", "."
-    return ",", "."
-
-
 def read_csv_flexible(uploaded_file, skip_rows):
-    detected_sep, detected_decimal = detect_csv_format(uploaded_file)
     read_attempts = [
-        {"sep": detected_sep, "engine": "python", "decimal": detected_decimal},
-        {"sep": detected_sep, "engine": "python"},
         {"sep": None, "engine": "python"},
         {"sep": ";", "engine": "python", "decimal": ","},
         {"sep": ";", "engine": "python"},
         {"sep": "\t", "engine": "python"},
-        {"sep": ",", "engine": "python", "decimal": ","},
     ]
 
     for params in read_attempts:
