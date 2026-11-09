@@ -165,7 +165,20 @@ with st.sidebar:
     st.subheader("Estética")
     font_size_axis = st.slider("Tamaño Fuente Ejes", 8, 20, 12)
     font_size_legend = st.slider("Tamaño Fuente Leyenda", 6, 16, 9)
-    loc_legend = st.selectbox("Posición Leyenda", ["best", "upper right", "upper left", "lower right", "none"], index=0)
+    legend_options = {
+        "Automática (dentro)": "best",
+        "Arriba a la derecha (dentro)": "upper right",
+        "Arriba a la izquierda (dentro)": "upper left",
+        "Abajo a la derecha (dentro)": "lower right",
+        "Derecha (fuera)": "outside_right",
+        "Debajo (fuera)": "outside_bottom",
+        "Sin leyenda": "none",
+    }
+    legend_label = st.selectbox("Posición Leyenda", list(legend_options), index=0)
+    loc_legend = legend_options[legend_label]
+    legend_columns = 1
+    if loc_legend == "outside_bottom":
+        legend_columns = st.number_input("Columnas de la leyenda", min_value=1, max_value=6, value=3, step=1)
 
 # --- Procesamiento y Configuración Individual ---
 
@@ -295,8 +308,16 @@ if uploaded_files:
         ax.spines['bottom'].set_visible(True)
 
         # Leyenda limpia
-        if loc_legend != "none":
+        if loc_legend == "outside_right":
+            ax.legend(loc="center left", bbox_to_anchor=(1.02, 0.5),
+                      borderaxespad=0, fontsize=font_size_legend, frameon=False)
+        elif loc_legend == "outside_bottom":
+            ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.18),
+                      ncol=min(legend_columns, len(plot_data)),
+                      borderaxespad=0, fontsize=font_size_legend, frameon=False)
+        elif loc_legend != "none":
             ax.legend(loc=loc_legend, fontsize=font_size_legend, frameon=False)
+        fig.tight_layout()
         
         # Mostrar en Streamlit
         st.pyplot(fig)
