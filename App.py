@@ -184,6 +184,7 @@ with st.sidebar:
 
 if uploaded_files:
     st.header("2. Configuración de Series")
+    st.caption("Marque Mostrar en el gráfico para elegir las series del gráfico y las exportaciones. Al ocultarlas se conservan sus ajustes.")
     
     plot_data = [] # Lista para guardar los dataframes procesados
     
@@ -209,6 +210,7 @@ if uploaded_files:
             
             # --- Panel de Configuración por Archivo (Expanders) ---
             with st.expander(f"🖍️ {file.name}", expanded=(i==0)):
+                show_series = st.checkbox("Mostrar en el gráfico", value=True, key=f"show_{i}")
                 # Se añaden 4 columnas para incluir el campo de Orden
                 c0, c1, c2, c3 = st.columns([1, 2, 2, 2])
                 
@@ -231,6 +233,8 @@ if uploaded_files:
                 
                 linestyle = c3.selectbox(f"Estilo Línea", ["-", "--", "-.", ":"], key=f"lst_{i}")
             
+            if not show_series:
+                continue
             plot_data.append({
                 "df": df_filtered,
                 "label": label,
@@ -241,6 +245,9 @@ if uploaded_files:
             })
         else:
             st.error(f"⚠️ Error leyendo {file.name}. Verifica que sea un CSV válido y ajusta las 'Filas a saltar' en el menú lateral.")
+
+    if not plot_data and not invalid_range:
+        st.info("No hay series seleccionadas con datos en el rango. Active Mostrar en el gráfico en al menos un archivo.")
 
     # --- Generación del Gráfico ---
     if plot_data:
